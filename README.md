@@ -126,3 +126,32 @@ make test
 # or:
 docker compose exec web pytest -q
 ```
+
+## What I Learned
+
+**Backend & API Design**
+
+- Built clean and structured API endpoints using Django Ninja
+- Improved separation by working with models, schemas and routers
+- Added input validation and predictable error handling
+
+**Database & Data Management**
+
+- Structured relational data for sensors and readings
+- Avoided duplicate entries when loading CSV data
+- Created seed scripts and handled database migrations
+
+**Docker Setup**
+
+- Used Docker Compose to run backend and PostgreSQL together
+- Learned how environment variables and volumes affect the setup
+
+**Frontend Integration**
+
+- Fetched and displayed data from the API using vanilla JavaScript
+- Built simple UI logic that follows the structure of the backend data
+
+**Debugging & Workflow**
+
+- Fixed backend errors, migration issues and seed script problems
+- Tested the full flow: authentication, API logic, database and frontend
