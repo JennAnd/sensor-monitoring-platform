@@ -1,6 +1,6 @@
 # Sensor Readings App
 
-A fullstack application for managing sensors and their readings.
+A fullstack application for managing sensors and their readings. Create, edit and manage sensor data with filtering and chart-based detail view.
 
 - **Backend:** Django 5 + Django Ninja (TokenAuth, PostgreSQL)
 - **Frontend:** Vanilla HTML, CSS, JavaScript
@@ -133,6 +133,28 @@ make test
 # or:
 docker compose exec web pytest -q
 ```
+
+---
+
+## Screenshots
+
+### Sensors
+
+<img src="./images/sensors.png" width="600" />
+
+Browse, search and manage sensors.
+
+### Sensor Details
+
+<img src="./images/details.png" width="600" />
+
+View sensor data with charts and filter by date.
+
+### Add Reading
+
+<img src="./images/add-reading.png" width="600" />
+
+Add new readings to a sensor.
 
 ## What I Learned
 
