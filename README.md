@@ -2,8 +2,6 @@
 
 A fullstack application for managing sensors and their readings. Create, edit and manage sensor data with filtering and chart-based detail view.
 
-> Note: This project is optimized for desktop and tablet usage. Some UI elements may not be fully responsive on smaller mobile screens.
-
 - **Backend:** Django 5 + Django Ninja (TokenAuth, PostgreSQL)
 - **Frontend:** Vanilla HTML, CSS, JavaScript
 - **Database:** PostgreSQL (Dockerized)

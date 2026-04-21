@@ -3,210 +3,424 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!------- View sensor details: filter readings, list them newest first, add a new reading in a graph ------->
     <title>Sensor details</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <link rel="stylesheet" href="./css/index.css" />
     <link rel="stylesheet" href="./css/sensor.css" />
 
-    <!-- Load Chart.js for temperature/humidity graph -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
-    <div class="container">
-      <header class="page-head">
-        <h1>Sensor details</h1>
-        <a class="link" href="sensors.html">Back to sensors</a>
-      </header>
+    <main class="sensor-page">
+      <section class="sensor-shell">
+        <header class="page-header">
+          <div class="page-heading">
+            <p class="page-eyebrow">Sensor details</p>
+            <h1>Sensor readings</h1>
+            <p class="page-lead">
+              Filter readings by date, review temperature and humidity values,
+              and add new readings to the selected sensor.
+            </p>
+          </div>
 
-      <!-- Filter readings by date and time -->
-      <form id="filterForm" class="row">
-        <!-- Start and end time for filtering -->
-        <input id="from" type="datetime-local" />
-        <input id="to" type="datetime-local" />
-        <button type="submit">Filter</button>
-      </form>
+          <a href="sensors.html" class="back-link">Back to sensors</a>
+        </header>
 
-      <!-- Chart showing temperature and humidity over time -->
-      <div class="card">
-        <canvas id="chart" height="160"></canvas>
-      </div>
+        <div id="pageMessage" class="page-message" aria-live="polite"></div>
 
-      <h3>Readings</h3>
-      <ul id="list"></ul>
+        <section class="details-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Filter readings</h2>
+              <p>Choose a date range to update the chart and reading list.</p>
+            </div>
 
-      <hr />
+            <form id="filterForm" class="panel-form filter-form">
+              <div class="form-group">
+                <label for="from">From</label>
+                <input id="from" type="datetime-local" />
+              </div>
 
-      <!-- Add a new reading (temperature, humidity and timestamp) -->
-      <h3>Add reading</h3>
-      <form id="createForm" class="row row-3">
-        <input
-          id="temp"
-          type="number"
-          step="0.1"
-          placeholder="Temperature"
-          required
-        />
-        <input
-          id="hum"
-          type="number"
-          step="0.1"
-          min="0"
-          max="100"
-          placeholder="Humidity (optional)"
-        />
-        <input id="ts" type="datetime-local" required />
-        <button type="submit" class="btn">Add</button>
-      </form>
-    </div>
+              <div class="form-group">
+                <label for="to">To</label>
+                <input id="to" type="datetime-local" />
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="primary-btn">Apply filter</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Add reading</h2>
+              <p>Add a new temperature and optional humidity reading.</p>
+            </div>
+
+            <form id="createForm" class="panel-form create-form">
+              <div class="form-group">
+                <label for="temp">Temperature</label>
+                <input
+                  id="temp"
+                  type="number"
+                  step="0.1"
+                  placeholder="e.g. 21.5"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="hum">Humidity</label>
+                <input
+                  id="hum"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  placeholder="Optional"
+                />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="ts">Timestamp</label>
+                <input id="ts" type="datetime-local" required />
+              </div>
+
+              <div class="form-actions full-width">
+                <button type="submit" class="primary-btn">Add reading</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="chart-panel">
+          <div class="panel-header">
+            <h2>Reading history</h2>
+            <p>Temperature and humidity trend over time.</p>
+          </div>
+
+          <div class="chart-card">
+            <div id="chartEmpty" class="chart-empty" hidden>
+              No readings available for this selection yet.
+            </div>
+            <canvas id="chart"></canvas>
+          </div>
+        </section>
+
+        <section class="list-panel">
+          <div class="list-panel-header">
+            <div>
+              <p class="table-kicker">Latest readings</p>
+              <h2>Reading list</h2>
+            </div>
+          </div>
+
+          <p class="table-scroll-note">
+            Scroll horizontally to view all columns.
+          </p>
+          <div class="reading-table-wrap">
+            <div class="list-head" aria-hidden="true">
+              <span>Timestamp</span> <span>Temperature</span>
+              <span>Humidity</span>
+            </div>
+            <ul id="list" class="reading-list"></ul>
+          </div>
+          <ul id="list" class="reading-list"></ul>
+        </section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
 
     <script>
-      // Read auth token or redirect if missing
       function getToken() {
         const t = localStorage.getItem("token");
         if (!t) {
-          alert("You must log in first.");
           location.href = "login.html";
           throw new Error("No token");
         }
         return t;
       }
 
-      // Read sensor ID from URL
       function getSensorId() {
         const id = new URLSearchParams(location.search).get("id");
         if (!id) {
-          alert("Missing sensor id in URL");
-          throw new Error("No sensor id");
+          location.href = "sensors.html";
+          throw new Error("Missing sensor id");
         }
         return id;
       }
 
-      // Build query string for timestamp filters in ISO 8601 format
+      const pageMessage = document.getElementById("pageMessage");
+      const toast = document.getElementById("toast");
+      const chartEmpty = document.getElementById("chartEmpty");
+      const chartCanvas = document.getElementById("chart");
+
+      let toastTimer;
+
+      function showPageMessage(message, type = "error") {
+        pageMessage.textContent = message;
+        pageMessage.className = `page-message is-visible ${type}`;
+      }
+
+      function clearPageMessage() {
+        pageMessage.textContent = "";
+        pageMessage.className = "page-message";
+      }
+
+      function showToast(message, type = "success") {
+        clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.className = `toast ${type}`;
+        toast.hidden = false;
+
+        toastTimer = setTimeout(() => {
+          toast.hidden = true;
+          toast.className = "toast";
+        }, 2600);
+      }
+
       function buildQuery() {
         const from = document.getElementById("from").value;
         const to = document.getElementById("to").value;
         const qs = [];
+
         if (from) qs.push("timestamp_from=" + new Date(from).toISOString());
         if (to) qs.push("timestamp_to=" + new Date(to).toISOString());
 
         return qs.length ? "?" + qs.join("&") : "";
       }
 
-      // Draw chart for temperature and humidity
+      function destroyChartIfExists() {
+        if (
+          window.sensorChart &&
+          typeof window.sensorChart.destroy === "function"
+        ) {
+          window.sensorChart.destroy();
+        }
+      }
+
       function renderChart(readings) {
-        // Destroy only if a real Chart instance exists
-        if (window.chart && typeof window.chart.destroy === "function") {
-          window.chart.destroy();
+        destroyChartIfExists();
+
+        if (!readings.length) {
+          chartCanvas.hidden = true;
+          chartEmpty.hidden = false;
+          return;
         }
 
-        const ctx = document.getElementById("chart").getContext("2d");
+        chartCanvas.hidden = false;
+        chartEmpty.hidden = true;
 
-        // X-axis labels and two data series
-        const labels = readings.map((r) =>
-          new Date(r.timestamp).toLocaleString()
-        );
-        const temps = readings.map((r) => Number(r.temperature));
-        const hums = readings.map((r) =>
-          r.humidity == null ? null : Number(r.humidity)
-        );
+        const ctx = chartCanvas.getContext("2d");
 
-        // Create a new chart
-        window.chart = new Chart(ctx, {
+        const labels = readings
+          .slice()
+          .reverse()
+          .map((r) => new Date(r.timestamp).toLocaleString());
+
+        const temps = readings
+          .slice()
+          .reverse()
+          .map((r) => Number(r.temperature));
+
+        const hums = readings
+          .slice()
+          .reverse()
+          .map((r) => (r.humidity == null ? null : Number(r.humidity)));
+
+        window.sensorChart = new Chart(ctx, {
           type: "line",
           data: {
             labels,
             datasets: [
-              { label: "Temperature (°C)", data: temps, yAxisID: "y1" },
-              { label: "Humidity (%)", data: hums, yAxisID: "y2" },
+              {
+                label: "Temperature (°C)",
+                data: temps,
+                yAxisID: "y1",
+                tension: 0.35,
+                borderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 5,
+              },
+              {
+                label: "Humidity (%)",
+                data: hums,
+                yAxisID: "y2",
+                tension: 0.35,
+                borderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 5,
+              },
             ],
           },
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: "index", intersect: false },
-            plugins: { legend: { display: true } },
+            plugins: {
+              legend: {
+                display: true,
+                labels: {
+                  boxWidth: 28,
+                  boxHeight: 10,
+                  padding: 16,
+                  font: {
+                    size: 13,
+                    weight: "500",
+                  },
+                },
+              },
+            },
             scales: {
+              x: {
+                ticks: {
+                  maxRotation: 0,
+                  autoSkip: true,
+                  maxTicksLimit: 6,
+                  font: {
+                    size: 12,
+                  },
+                },
+                grid: {
+                  color: "rgba(24, 34, 48, 0.06)",
+                },
+              },
               y1: {
                 type: "linear",
                 position: "left",
-                title: { display: true, text: "°C" },
+                title: {
+                  display: true,
+                  text: "°C",
+                  font: {
+                    size: 12,
+                    weight: "600",
+                  },
+                },
+                ticks: {
+                  font: {
+                    size: 12,
+                  },
+                },
+                grid: {
+                  color: "rgba(24, 34, 48, 0.06)",
+                },
               },
               y2: {
                 type: "linear",
                 position: "right",
-                grid: { drawOnChartArea: false },
-                title: { display: true, text: "%" },
+                grid: {
+                  drawOnChartArea: false,
+                },
+                title: {
+                  display: true,
+                  text: "%",
+                  font: {
+                    size: 12,
+                    weight: "600",
+                  },
+                },
+                ticks: {
+                  font: {
+                    size: 12,
+                  },
+                },
               },
             },
           },
         });
       }
-
-      // Load readings and show them in a list
-      async function loadReadings() {
-        const token = getToken();
-        const sensorId = getSensorId();
-        const qs = buildQuery();
-
-        const res = await fetch(
-          `http://localhost:8000/api/sensors/${sensorId}/readings${qs}`,
-          {
-            headers: { Authorization: "Bearer " + token },
-          }
-        );
-
-        if (res.status === 401) {
-          alert("Session expired. Please log in again.");
-          localStorage.removeItem("token");
-          location.href = "login.html";
-          return;
-        }
-        if (!res.ok) throw new Error("Failed to load readings");
-
-        const data = await res.json(); // expect array sorted by newest first
-        // Support both array and paginated responses
-        const items = Array.isArray(data) ? data : data.items || [];
-
+      function renderReadings(items) {
         const ul = document.getElementById("list");
         ul.innerHTML = "";
-        if (!items.length) {
-          ul.innerHTML = "<li>No readings.</li>";
 
-          // Optional: destroy chart so an old chart isn’t shown
-          if (window.chart && typeof window.chart.destroy === "function") {
-            window.chart.destroy();
-          }
+        if (!items.length) {
+          ul.innerHTML = `
+      <li class="empty-state">
+        <strong>No readings found</strong>
+        <p>Try another filter range or add a new reading to get started.</p>
+      </li>
+    `;
           return;
         }
 
         items.forEach((r) => {
           const li = document.createElement("li");
-          const humText = r.humidity == null ? "-" : `${r.humidity}%`;
-          li.textContent = `${r.timestamp} — T: ${r.temperature}°C, H: ${humText}`;
+          li.className = "reading-row";
+
+          const humidityText = r.humidity == null ? "—" : `${r.humidity}%`;
+
+          li.innerHTML = `
+      <span>${new Date(r.timestamp).toLocaleString()}</span>
+      <span>${r.temperature}°C</span>
+      <span>${humidityText}</span>
+    `;
+
           ul.appendChild(li);
         });
-
-        // Draw chart after loading readings
-        renderChart(items);
       }
 
-      // Reload list when user clicks "Filter"
+      async function loadReadings() {
+        clearPageMessage();
+
+        const token = getToken();
+        const sensorId = getSensorId();
+        const qs = buildQuery();
+
+        try {
+          const res = await fetch(
+            `http://localhost:8000/api/sensors/${sensorId}/readings${qs}`,
+            {
+              headers: { Authorization: "Bearer " + token },
+            },
+          );
+
+          if (res.status === 401) {
+            localStorage.removeItem("token");
+            location.href = "login.html";
+            return;
+          }
+
+          if (!res.ok) {
+            throw new Error("Failed to load readings");
+          }
+
+          const data = await res.json();
+          const items = (Array.isArray(data) ? data : data.items || []).sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
+          );
+
+          renderReadings(items);
+          renderChart(items);
+        } catch (err) {
+          destroyChartIfExists();
+          chartCanvas.hidden = true;
+          chartEmpty.hidden = false;
+          showPageMessage(err.message || "Failed to load readings.");
+        }
+      }
+
       document
         .getElementById("filterForm")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
-
-          try {
-            await loadReadings();
-          } catch (err) {
-            alert(err.message);
-          }
+          await loadReadings();
         });
 
-      // Create new reading (POST)
       document
         .getElementById("createForm")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
+          clearPageMessage();
+
           const token = getToken();
           const sensorId = getSensorId();
 
@@ -214,41 +428,55 @@
           const humValue = document.getElementById("hum").value;
           const humidity = humValue === "" ? null : parseFloat(humValue);
           const tsLocal = document.getElementById("ts").value;
-          // Convert local date/time to ISO 8601
-          const timestamp = new Date(tsLocal).toISOString();
 
-          const res = await fetch(
-            `http://localhost:8000/api/sensors/${sensorId}/readings`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: "Bearer " + token,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ temperature, humidity, timestamp }),
-            }
-          );
-
-          if (res.status === 401) {
-            alert("Session expired. Please login again.");
-            localStorage.removeItem("token");
-            location.href = "login.html";
+          if (Number.isNaN(temperature) || !tsLocal) {
+            showPageMessage("Please fill in temperature and timestamp.");
             return;
           }
-          if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || "Failed to create reading");
+
+          if (humidity !== null && Number.isNaN(humidity)) {
+            showPageMessage("Humidity must be a valid number.");
+            return;
           }
 
-          // Reload list and clear from fields
-          await loadReadings();
-          document.getElementById("temp").value = "";
-          document.getElementById("hum").value = "";
-          document.getElementById("ts").value = "";
+          const timestamp = new Date(tsLocal).toISOString();
+
+          try {
+            const res = await fetch(
+              `http://localhost:8000/api/sensors/${sensorId}/readings`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: "Bearer " + token,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ temperature, humidity, timestamp }),
+              },
+            );
+
+            if (res.status === 401) {
+              localStorage.removeItem("token");
+              location.href = "login.html";
+              return;
+            }
+
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(text || "Failed to create reading");
+            }
+
+            document.getElementById("temp").value = "";
+            document.getElementById("hum").value = "";
+            document.getElementById("ts").value = "";
+
+            showToast("Reading added successfully.");
+            await loadReadings();
+          } catch (err) {
+            showPageMessage(err.message || "Failed to create reading.");
+          }
         });
 
-      // Load readings when page opens
-      loadReadings().catch((err) => alert(err.message));
+      loadReadings();
     </script>
   </body>
 </html>
