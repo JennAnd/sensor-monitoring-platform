@@ -4,58 +4,168 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sign in</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <link rel="stylesheet" href="./css/index.css" />
     <link rel="stylesheet" href="./css/login.css" />
   </head>
   <body>
-    <!-- Login form -->
-    <form id="loginForm">
-      <h1>Sign in</h1>
-      <input id="username" type="text" placeholder="Username" required />
-      <input id="password" type="password" placeholder="Password" required />
-      <button type="submit">Sign in</button>
-      <p>Don't have an account yet? <a href="register.html">Sign up</a></p>
-    </form>
+    <main class="auth-page">
+      <section class="auth-layout">
+        <div class="auth-copy">
+          <p class="auth-eyebrow">Sign in</p>
+          <h1>Access your sensor dashboard.</h1>
+          <p class="auth-lead">
+            Sign in to manage sensors and review temperature and humidity
+            readings.
+          </p>
+
+          <div class="auth-note">
+            <span class="auth-note-label">Quick access</span>
+            <p>Open your sensor overview and inspect individual readings.</p>
+          </div>
+        </div>
+
+        <form id="loginForm" class="auth-card" novalidate>
+          <div class="auth-card-header">
+            <p class="form-kicker">Account access</p>
+            <h2>Welcome back</h2>
+            <p class="form-text">Enter your details to continue.</p>
+          </div>
+
+          <div id="loginMessage" class="form-message" aria-live="polite"></div>
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="password-field">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                id="togglePassword"
+                aria-label="Show password"
+                aria-pressed="false"
+              >
+                Show
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitButton">
+            Sign in
+          </button>
+
+          <p class="form-footer">
+            Don’t have an account yet?
+            <a href="register.html">Create one</a>
+          </p>
+        </form>
+      </section>
+    </main>
 
     <script>
-      // Handle login form without reloading the page
-      document
-        .getElementById("loginForm")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
+      const loginForm = document.getElementById("loginForm");
+      const usernameInput = document.getElementById("username");
+      const passwordInput = document.getElementById("password");
+      const loginMessage = document.getElementById("loginMessage");
+      const submitButton = document.getElementById("submitButton");
+      const togglePasswordButton = document.getElementById("togglePassword");
 
-          // Get values from input fields
-          const username = document.getElementById("username").value;
-          const password = document.getElementById("password").value;
+      function showMessage(message, type = "error") {
+        loginMessage.textContent = message;
+        loginMessage.className = `form-message is-visible ${type}`;
+      }
 
-          try {
-            // Send POST request to Django API for authentication
-            const res = await fetch(
-              `http://localhost:8000/api/auth/token?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-              {
-                method: "POST",
-              }
-            );
+      function clearMessage() {
+        loginMessage.textContent = "";
+        loginMessage.className = "form-message";
+      }
 
-            // Check if response is successful
-            if (!res.ok) {
+      togglePasswordButton.addEventListener("click", () => {
+        const isHidden = passwordInput.type === "password";
+        passwordInput.type = isHidden ? "text" : "password";
+        togglePasswordButton.textContent = isHidden ? "Hide" : "Show";
+        togglePasswordButton.setAttribute("aria-pressed", String(isHidden));
+        togglePasswordButton.setAttribute(
+          "aria-label",
+          isHidden ? "Hide password" : "Show password",
+        );
+      });
+
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearMessage();
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!username || !password) {
+          showMessage("Please fill in both username and password.");
+          return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Signing in...";
+
+        try {
+          const res = await fetch(
+            `http://localhost:8000/api/auth/token?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+            {
+              method: "POST",
+            },
+          );
+
+          if (!res.ok) {
+            let errorMessage = "Sign in failed. Please check your details.";
+            try {
               const text = await res.text();
-              throw new Error(text || "Login failed");
-            }
-            // Parse respons and get the token
-            const data = await res.json();
-            if (!data.token) throw new Error("No token in response");
-
-            // Store token
-            localStorage.setItem("token", data.token);
-
-            alert("Login successful!");
-            // Redirect to sensors page
-            location.href = "sensors.html";
-          } catch (err) {
-            alert("Error: " + err.message);
+              if (text) errorMessage = text;
+            } catch (_) {}
+            throw new Error(errorMessage);
           }
-        });
+
+          const data = await res.json();
+
+          if (!data.token) {
+            throw new Error("No token returned from the server.");
+          }
+
+          localStorage.setItem("token", data.token);
+          showMessage("Sign in successful. Redirecting...", "success");
+
+          setTimeout(() => {
+            window.location.href = "sensors.html";
+          }, 500);
+        } catch (err) {
+          showMessage(err.message || "Something went wrong. Please try again.");
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "Sign in";
+        }
+      });
     </script>
   </body>
 </html>
