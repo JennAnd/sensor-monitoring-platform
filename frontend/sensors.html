@@ -4,138 +4,333 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sensors</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <link rel="stylesheet" href="./css/index.css" />
     <link rel="stylesheet" href="./css/sensors.css" />
   </head>
   <body>
-    <!------- Create new sensors and view sensors ------->
-    <div class="container">
-      <header>
-        <h1>Sensors</h1>
-        <p><a href="login.html">Log out</a></p>
-      </header>
-      <!-- Search sensors by name or type -->
-      <form id="searchForm" class="sensor-form">
-        <input id="q" placeholder="Search by name or type" />
-        <button type="submit">Search</button>
-        <span
-          id="loading"
-          class="spinner"
-          hidden
-          aria-live="polite"
-          title="Loading"
-        ></span>
-      </form>
+    <main class="sensors-page">
+      <section class="sensors-shell">
+        <header class="page-header">
+          <div class="page-heading">
+            <p class="page-eyebrow">Sensor overview</p>
+            <h1>Sensors</h1>
+            <p class="page-lead">
+              Search sensors, add new devices, and open individual sensor views
+              to inspect readings in more detail.
+            </p>
+          </div>
 
-      <!-- Create a new sensor form -->
-      <form id="createForm" class="sensor-form">
-        <input id="name" placeholder="Name" required />
-        <input id="type" placeholder="Type" required />
-        <button type="submit">Add sensor</button>
-      </form>
+          <a href="login.html" class="logout-link" id="logoutLink">Log out</a>
+        </header>
 
-      <hr />
+        <div id="pageMessage" class="page-message" aria-live="polite"></div>
 
-      <!-- List of all sensors for this user-->
-      <ul id="list"></ul>
+        <section class="control-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Search sensors</h2>
+              <p>Filter by sensor name or type.</p>
+            </div>
 
-      <!-- Pagination control (prev page and next page)-->
-      <div id="pager" hidden>
-        <button id="prevBtn">Prev</button>
-        <span id="pageInfo"></span>
-        <button id="nextBtn">Next</button>
+            <form id="searchForm" class="panel-form">
+              <div class="field-wrap search-wrap">
+                <input id="q" placeholder="Search by name or type" />
+                <span
+                  id="loading"
+                  class="spinner"
+                  hidden
+                  aria-live="polite"
+                  title="Loading"
+                ></span>
+              </div>
+              <button type="submit" class="primary-btn">Search</button>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Add sensor</h2>
+              <p>Create a new sensor entry.</p>
+            </div>
+
+            <form id="createForm" class="panel-form stacked">
+              <input id="name" placeholder="Sensor name" required />
+              <input id="type" placeholder="Sensor type" required />
+              <button type="submit" class="primary-btn">Add sensor</button>
+            </form>
+          </div>
+        </section>
+
+        <section class="list-panel">
+          <div class="list-panel-header">
+            <div>
+              <p class="table-kicker">Registered sensors</p>
+              <h2>Your sensor list</h2>
+            </div>
+          </div>
+
+          <div class="list-head" aria-hidden="true">
+            <span>Name</span>
+            <span>Type</span>
+            <span>Actions</span>
+          </div>
+
+          <ul id="list" class="sensor-list"></ul>
+
+          <div id="pager" class="pager" hidden>
+            <button id="prevBtn" class="pager-btn">Prev</button>
+            <span id="pageInfo"></span>
+            <button id="nextBtn" class="pager-btn">Next</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <!-- Edit modal -->
+    <div id="toast" class="toast" hidden></div>
+    <div id="editModal" class="modal-backdrop" hidden>
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editModalTitle"
+      >
+        <div class="modal-header">
+          <div>
+            <p class="modal-kicker">Edit sensor</p>
+            <h2 id="editModalTitle">Update sensor details</h2>
+          </div>
+          <button
+            type="button"
+            class="icon-close-btn"
+            id="closeEditModalBtn"
+            aria-label="Close edit modal"
+          >
+            ×
+          </button>
+        </div>
+
+        <form id="editForm" class="modal-form">
+          <input type="hidden" id="editSensorId" />
+
+          <div class="form-group">
+            <label for="editName">Sensor name</label>
+            <input id="editName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="editType">Sensor type</label>
+            <input id="editType" required />
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="secondary-btn" id="cancelEditBtn">
+              Cancel
+            </button>
+            <button type="submit" class="primary-btn">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete modal -->
+    <div id="deleteModal" class="modal-backdrop" hidden>
+      <div
+        class="modal-card modal-card-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="deleteModalTitle"
+      >
+        <div class="modal-header">
+          <div>
+            <p class="modal-kicker">Delete sensor</p>
+            <h2 id="deleteModalTitle">Delete this sensor?</h2>
+          </div>
+          <button
+            type="button"
+            class="icon-close-btn"
+            id="closeDeleteModalBtn"
+            aria-label="Close delete modal"
+          >
+            ×
+          </button>
+        </div>
+
+        <p class="modal-text">
+          This will remove the sensor and its readings. This action cannot be
+          undone.
+        </p>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" id="cancelDeleteBtn">
+            Cancel
+          </button>
+          <button type="button" class="danger-btn-solid" id="confirmDeleteBtn">
+            Delete sensor
+          </button>
+        </div>
       </div>
     </div>
 
     <script>
-      // Get saved token or redirect if not logged in
       function getToken() {
         const t = localStorage.getItem("token");
         if (!t) {
-          alert("You must log in first.");
           location.href = "login.html";
           throw new Error("No token found");
         }
         return t;
       }
 
-      // Keeps current search text and active page so we can rebuild the query string
+      document.getElementById("logoutLink").addEventListener("click", () => {
+        localStorage.removeItem("token");
+      });
+
+      const pageMessage = document.getElementById("pageMessage");
+      const toast = document.getElementById("toast");
+      let toastTimer;
+
+      function showToast(message, type = "success") {
+        clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.className = `toast ${type}`;
+        toast.hidden = false;
+
+        toastTimer = setTimeout(() => {
+          toast.hidden = true;
+          toast.className = "toast";
+        }, 2600);
+      }
+
+      function showPageMessage(message, type = "error") {
+        pageMessage.textContent = message;
+        pageMessage.className = `page-message is-visible ${type}`;
+      }
+
+      function clearPageMessage() {
+        pageMessage.textContent = "";
+        pageMessage.className = "page-message";
+      }
+
       let searchState = { q: "", page: 1 };
-      // Build the search part of the URL, example: ?q=temperature
+      let pendingDeleteId = null;
+
       function buildQS() {
         const p = new URLSearchParams();
-        if (searchState.q) p.set("q", searchState.q.trim()); // If user typed something, add it
+        if (searchState.q) p.set("q", searchState.q.trim());
         if (searchState.page > 1) p.set("page", String(searchState.page));
-
-        // If something was added return it with ?, otherwise return nothing
         return p.toString() ? "?" + p.toString() : "";
       }
 
-      // Load all sensors that belong to the logged-in user
+      function closeEditModal() {
+        document.getElementById("editModal").hidden = true;
+      }
+
+      function openEditModal(id, name, type) {
+        clearPageMessage();
+        document.getElementById("editSensorId").value = id;
+        document.getElementById("editName").value = name;
+        document.getElementById("editType").value = type;
+        document.getElementById("editModal").hidden = false;
+      }
+
+      function closeDeleteModal() {
+        document.getElementById("deleteModal").hidden = true;
+        pendingDeleteId = null;
+      }
+
+      function openDeleteModal(id) {
+        clearPageMessage();
+        pendingDeleteId = id;
+        document.getElementById("deleteModal").hidden = false;
+      }
+
       async function loadSensors() {
         const token = getToken();
         const loader = document.getElementById("loading");
-        // Show loader while fetching
-        loader.hidden = false; // show
+        const ul = document.getElementById("list");
+
+        loader.hidden = false;
+
         try {
-          // GET /api/sensors (requires Bearer token)
           const res = await fetch(
             "http://localhost:8000/api/sensors" + buildQS(),
             {
               headers: { Authorization: "Bearer " + token },
-            }
+            },
           );
 
-          // Handle invalid token
           if (res.status === 401) {
-            alert("Session expired. Please log in again.");
             localStorage.removeItem("token");
             location.href = "login.html";
             return;
           }
 
-          // Handle other errors
           if (!res.ok) throw new Error("Failed to load sensors");
 
-          // Parse JSON response
           const data = await res.json();
-
-          // Support both array and paginated formats
           const items = Array.isArray(data) ? data : data.items || [];
 
-          // Show sensors in a list
-          const ul = document.getElementById("list");
           ul.innerHTML = "";
 
-          // If no sensors are found, show a message
           if (items.length === 0) {
-            ul.innerHTML = "<li>No sensors found.</li>";
+            ul.innerHTML = `
+              <li class="empty-state">
+                <strong>No sensors found</strong>
+                <p>Try adjusting your search or add a new sensor to get started.</p>
+              </li>
+            `;
           } else {
-            // Loop through each sensor from the API response
             items.forEach((s) => {
-              const li = document.createElement("li");
+              const typeValue = s.model ?? s.type ?? "";
 
-              // Each sensor shows name, type and two buttons (Edit / Delete)
+              const li = document.createElement("li");
+              li.className = "sensor-row";
+
               li.innerHTML = `
-  <span class="name"><a href="sensor.html?id=${s.id}">${s.name}</a></span>
-  <span class="sep" aria-hidden="true"></span>
-  <span class="type">${s.model ?? s.type ?? ""}</span>
-  <button onclick="editSensor(${s.id}, '${s.name.replace(/'/g, "\\'")}', '${(s.model ?? s.type ?? "").replace(/'/g, "\\'")}')">Edit</button>
-  <button onclick="deleteSensor(${s.id})">Delete</button>
-`;
+                <div class="sensor-main">
+                  <a class="sensor-name" href="sensor.html?id=${s.id}">${s.name}</a>
+                  <span class="sensor-type">${typeValue}</span>
+                </div>
+
+                <div class="sensor-actions">
+                  <button
+                    class="row-btn"
+                    data-action="edit"
+                    data-id="${s.id}"
+                    data-name="${s.name.replace(/"/g, "&quot;")}"
+                    data-type="${typeValue.replace(/"/g, "&quot;")}"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    class="row-btn danger-btn"
+                    data-action="delete"
+                    data-id="${s.id}"
+                  >
+                    Delete
+                  </button>
+                </div>
+              `;
 
               ul.appendChild(li);
             });
           }
 
-          // Pagination
           const pager = document.getElementById("pager");
           const prevBtn = document.getElementById("prevBtn");
           const nextBtn = document.getElementById("nextBtn");
           const pageInfo = document.getElementById("pageInfo");
 
           if (Array.isArray(data)) {
-            // Non-paginated response - hide pager
             pager.hidden = true;
           } else {
             const TOTAL = Number(data.count ?? 0);
@@ -143,51 +338,49 @@
             const page = Number(searchState.page || 1);
             const pages = Math.max(1, Math.ceil(TOTAL / PAGE_SIZE));
 
-            // Show pager only if there is more than one page
             pager.hidden = pages <= 1;
-
-            // Update text and button states
             pageInfo.textContent = `Page ${page} / ${pages}`;
             prevBtn.disabled = page <= 1;
             nextBtn.disabled = page >= pages;
 
-            // Wire up the buttons to update state and reload
             prevBtn.onclick = () => {
               if (searchState.page > 1) {
                 searchState.page -= 1;
-                loadSensors().catch((err) => alert(err.message));
+                loadSensors().catch((err) => showPageMessage(err.message));
               }
             };
+
             nextBtn.onclick = () => {
               const max = pages || searchState.page + 1;
               if (searchState.page < max) {
                 searchState.page += 1;
-                loadSensors().catch((err) => alert(err.message));
+                loadSensors().catch((err) => showPageMessage(err.message));
               }
             };
           }
         } catch (err) {
-          alert("Error: " + err.message);
+          showPageMessage(err.message || "Something went wrong.");
         } finally {
-          // Always hide loader when done (success or error)
-          loader.hidden = true; // hide
+          loader.hidden = true;
         }
       }
 
-      // Handle create sensor form
       document
         .getElementById("createForm")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
-          const token = getToken();
+          clearPageMessage();
 
-          // Get input values
+          const token = getToken();
           const name = document.getElementById("name").value.trim();
           const type = document.getElementById("type").value.trim();
-          if (!name || !type) return;
+
+          if (!name || !type) {
+            showPageMessage("Please fill in both sensor name and type.");
+            return;
+          }
 
           try {
-            // POST /api/sensors with JSON body
             const res = await fetch("http://localhost:8000/api/sensors", {
               method: "POST",
               headers: {
@@ -197,108 +390,158 @@
               body: JSON.stringify({ name, type }),
             });
 
-            // Handle invalid token
             if (res.status === 401) {
-              alert("Session expired. Please log in again.");
               localStorage.removeItem("token");
               location.href = "login.html";
               return;
             }
 
-            // Handle other errors
             if (!res.ok) {
               const text = await res.text();
               throw new Error(text || "Failed to create sensor");
             }
 
-            // If success, reload list and clear input fields
-            await loadSensors();
             document.getElementById("name").value = "";
             document.getElementById("type").value = "";
+            showToast("Sensor created successfully.");
+            await loadSensors();
           } catch (err) {
-            alert("Error: " + err.message);
+            showPageMessage(err.message || "Failed to create sensor.");
           }
         });
 
-      // Edit a sensor (PUT), use PUT when update or replace an existing item in the database
-      async function editSensor(id, curName, curType) {
-        const token = getToken(); // Get the saved login token
-
-        // Ask user for new name and type
-        const newName = prompt("New sensor name:", curName);
-        if (newName === null) return;
-        const newType = prompt("New sensor type/model:", curType);
-        if (newType === null) return;
-
-        // Send PUT request to update sensor data
-        const res = await fetch(`http://localhost:8000/api/sensors/${id}`, {
-          method: "PUT",
-          headers: {
-            Authorization: "Bearer " + token,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name: newName.trim(), type: newType.trim() }),
-        });
-
-        // If token expired, log user out
-        if (res.status === 401) {
-          alert("Session expired. Please log in again.");
-          localStorage.removeItem("token");
-          location.href = "login.html";
-          return;
-        }
-
-        // If update fail, show message
-        if (!res.ok) {
-          const text = await res.text();
-          alert("Failed to update: " + (text || res.status));
-          return;
-        }
-        loadSensors(); // reload list
-      }
-
-      // Delete a sensor (DELETE)
-      async function deleteSensor(id) {
-        const token = getToken();
-
-        // Ask user to confirm before deleting
-        if (!confirm("Delete this sensor (and its readings)?")) return;
-
-        // Send DELETE request to backend
-        const res = await fetch(`http://localhost:8000/api/sensors/${id}`, {
-          method: "DELETE",
-          headers: { Authorization: "Bearer " + token },
-        });
-
-        // Handle expired or invalid token
-        if (res.status === 401) {
-          alert("Session expired. Please log in again.");
-          localStorage.removeItem("token");
-          location.href = "login.html";
-          return;
-        }
-
-        // If delete fails, show message
-        if (res.status !== 204) {
-          const text = await res.text();
-          alert("Failed to delete: " + (text || res.status));
-          return;
-        }
-
-        if (searchState.page > 1) searchState.page -= 1;
-        loadSensors(); // reload list
-      }
-
-      // When user clicks Search
       document.getElementById("searchForm").addEventListener("submit", (e) => {
-        e.preventDefault(); // Stop page from reloading
+        e.preventDefault();
+        clearPageMessage();
         searchState.q = document.getElementById("q").value;
-        searchState.page = 1; // reset page on new search
-
-        loadSensors().catch((err) => alert(err.message));
+        searchState.page = 1;
+        loadSensors().catch((err) => showPageMessage(err.message));
       });
 
-      // Load sensors automatically when the page opens
+      document.getElementById("list").addEventListener("click", (e) => {
+        const button = e.target.closest("button[data-action]");
+        if (!button) return;
+
+        const action = button.dataset.action;
+        const id = button.dataset.id;
+
+        if (action === "edit") {
+          openEditModal(
+            id,
+            button.dataset.name || "",
+            button.dataset.type || "",
+          );
+        }
+
+        if (action === "delete") {
+          openDeleteModal(id);
+        }
+      });
+
+      document
+        .getElementById("editForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          clearPageMessage();
+
+          const token = getToken();
+          const id = document.getElementById("editSensorId").value;
+          const name = document.getElementById("editName").value.trim();
+          const type = document.getElementById("editType").value.trim();
+
+          if (!name || !type) {
+            showPageMessage("Please fill in both sensor name and type.");
+            return;
+          }
+
+          try {
+            const res = await fetch(`http://localhost:8000/api/sensors/${id}`, {
+              method: "PUT",
+              headers: {
+                Authorization: "Bearer " + token,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ name, type }),
+            });
+
+            if (res.status === 401) {
+              localStorage.removeItem("token");
+              location.href = "login.html";
+              return;
+            }
+
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(text || "Failed to update sensor");
+            }
+
+            closeEditModal();
+            showToast("Sensor updated successfully.");
+            await loadSensors();
+          } catch (err) {
+            showPageMessage(err.message || "Failed to update sensor.");
+          }
+        });
+
+      document
+        .getElementById("confirmDeleteBtn")
+        .addEventListener("click", async () => {
+          if (!pendingDeleteId) return;
+          clearPageMessage();
+
+          const token = getToken();
+
+          try {
+            const res = await fetch(
+              `http://localhost:8000/api/sensors/${pendingDeleteId}`,
+              {
+                method: "DELETE",
+                headers: { Authorization: "Bearer " + token },
+              },
+            );
+
+            if (res.status === 401) {
+              localStorage.removeItem("token");
+              location.href = "login.html";
+              return;
+            }
+
+            if (res.status !== 204) {
+              const text = await res.text();
+              throw new Error(text || "Failed to delete sensor");
+            }
+
+            closeDeleteModal();
+
+            if (searchState.page > 1) searchState.page -= 1;
+            showToast("Sensor deleted.");
+            await loadSensors();
+          } catch (err) {
+            showPageMessage(err.message || "Failed to delete sensor.");
+          }
+        });
+
+      document
+        .getElementById("closeEditModalBtn")
+        .addEventListener("click", closeEditModal);
+      document
+        .getElementById("cancelEditBtn")
+        .addEventListener("click", closeEditModal);
+      document
+        .getElementById("closeDeleteModalBtn")
+        .addEventListener("click", closeDeleteModal);
+      document
+        .getElementById("cancelDeleteBtn")
+        .addEventListener("click", closeDeleteModal);
+
+      document.getElementById("editModal").addEventListener("click", (e) => {
+        if (e.target.id === "editModal") closeEditModal();
+      });
+
+      document.getElementById("deleteModal").addEventListener("click", (e) => {
+        if (e.target.id === "deleteModal") closeDeleteModal();
+      });
+
       loadSensors();
     </script>
   </body>
