@@ -48,3 +48,7 @@ class ReadingOut(ReadingBase):
     }
     """
     id: int
+
+class AuthIn(Schema):
+    username: str
+    password: str

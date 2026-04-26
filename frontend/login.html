@@ -131,12 +131,16 @@
         submitButton.textContent = "Signing in...";
 
         try {
-          const res = await fetch(
-            `http://localhost:8000/api/auth/token?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-            {
-              method: "POST",
+          const res = await fetch("http://127.0.0.1:8000/api/auth/token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
             },
-          );
+            body: JSON.stringify({
+              username,
+              password,
+            }),
+          });
 
           if (!res.ok) {
             let errorMessage = "Sign in failed. Please check your details.";
